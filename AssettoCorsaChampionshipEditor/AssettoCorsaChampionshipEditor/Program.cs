@@ -12,11 +12,17 @@ namespace AssettoCorsaChampionshipEditor
             Console.WriteLine(acDir);
             string[] cars = GetListOfCars(acDir);
             string[] tracks = GetListOfTracks(acDir);
-            
-            Console.WriteLine("\nCars:\n");
-            Array.ForEach(cars, Console.WriteLine);
-            Console.WriteLine("\n\nTracks:\n");
-            Array.ForEach(tracks, Console.WriteLine);
+
+
+            Championship c = new Championship(acDir + "\\content\\career\\series_dtm2020");
+            c.PrettyPrintChampionshipDetails();
+            c.ExportChampionshipToFile(acDir);
+
+            //Console.WriteLine("Exporting");
+            //Console.WriteLine("\nCars:\n");
+            //Array.ForEach(cars, Console.WriteLine);
+            //Console.WriteLine("\n\nTracks:\n");
+            //Array.ForEach(tracks, Console.WriteLine);
         }
 
         private static string[] GetListOfCars(string gameDirectory)
