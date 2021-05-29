@@ -10,14 +10,22 @@ namespace AssettoCorsaChampionshipEditor
         {
             string acDir = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\assettocorsa";
             Console.WriteLine(acDir);
-            string[] cars = Directory.GetDirectories(acDir + "\\content\\cars").Select(Path.GetFileName).ToArray();
-            string[] tracks = Directory.GetDirectories(acDir + "\\content\\tracks").Select(Path.GetFileName).ToArray();
-            //
-            //
+            string[] cars = GetListOfCars(acDir);
+            string[] tracks = GetListOfTracks(acDir);
+            
             Console.WriteLine("\nCars:\n");
             Array.ForEach(cars, Console.WriteLine);
             Console.WriteLine("\n\nTracks:\n");
             Array.ForEach(tracks, Console.WriteLine);
+        }
+
+        private static string[] GetListOfCars(string gameDirectory)
+        {
+            return Directory.GetDirectories(gameDirectory + "\\content\\cars").Select(Path.GetFileName).ToArray();
+        }
+        private static string[] GetListOfTracks(string gameDirectory)
+        {
+            return Directory.GetDirectories(gameDirectory + "\\content\\tracks").Select(Path.GetFileName).ToArray();
         }
     }
 }
