@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-public class Event
+namespace AssettoCorsaChampionshipEditor
 {
-    private string eventTemplate = @"[EVENT]
+    public class Event
+    {
+        private string eventTemplate = @"[EVENT]
 NAME = {0}
 DESCRIPTION = {1}
 
@@ -27,75 +29,102 @@ SETUP =
 MODEL = {4}
 SKIN = {5}
 DRIVER_NAME =
-NATIONALITY = Monaco";
-    private int eventIndex;
-    private string name, description, weather, track, layout, vehicle, trackSkin, carSkin, imageSrc;
+NATIONALITY = ";
+        private int eventIndex;
+        private string name, description, weather, track, layout, vehicle, trackSkin, carSkin, imageSrc;
 
-    public Event(int eventNumber, string pathToDirectory)
-	{
-        eventIndex = eventNumber;
-        string[] fileContents = File.ReadAllLines(pathToDirectory + "\\event.ini");
-        string[] sectionHeaders = fileContents.Where(c => (new[] { "[", "]" }).Any(c.Contains)).ToArray();
-        Dictionary<string, Dictionary<string, string>> eventProps = new Dictionary<string, Dictionary<string, string>>();
-        for (int i = 0; i < sectionHeaders.Length; i++)
+        /// <summary>
+        /// Creates an Event object based on a specified input file
+        /// </summary>
+        /// <param name="eventNumber"></param>
+        /// <param name="pathToDirectory"></param>
+        public Event(int eventNumber, string pathToDirectory)
         {
-            string sectionHeader = sectionHeaders[i];
-            int thisSection = Array.IndexOf(fileContents, sectionHeader);
-            int lengthToTake = (i + 1 < sectionHeaders.Length ? Array.IndexOf(fileContents, sectionHeaders[i + 1]) : fileContents.Length) - thisSection;
-            eventProps.Add(sectionHeader, PopulateDictionaryWithValues(sectionHeader, fileContents.Skip(thisSection).Take(lengthToTake).ToArray()));
+            eventIndex = eventNumber;
+            string[] fileContents = File.ReadAllLines(pathToDirectory + "\\event.ini");
+            string[] sectionHeaders = fileContents.Where(c => (new[] { "[", "]" }).Any(c.Contains)).ToArray();
+            Dictionary<string, Dictionary<string, string>> eventProps = new Dictionary<string, Dictionary<string, string>>();
+            for (int i = 0; i < sectionHeaders.Length; i++)
+            {
+                string sectionHeader = sectionHeaders[i];
+                int thisSection = Array.IndexOf(fileContents, sectionHeader);
+                int lengthToTake = (i + 1 < sectionHeaders.Length ? Array.IndexOf(fileContents, sectionHeaders[i + 1]) : fileContents.Length) - thisSection;
+                eventProps.Add(sectionHeader, PopulateDictionaryWithValues(sectionHeader, fileContents.Skip(thisSection).Take(lengthToTake).ToArray()));
+            }
+            name = eventProps["[EVENT]"]["NAME"];
+            description = eventProps["[EVENT]"]["DESCRIPTION"];
+            vehicle = eventProps["[RACE]"]["MODEL"];
+            track = eventProps["[RACE]"]["TRACK"];
+            try
+            {
+                layout = eventProps["[RACE]"]["CONFIG_TRACK"];
+            }
+            catch (KeyNotFoundException)
+            {
+                layout = "";
+            }
+            carSkin = eventProps["[CAR_0]"]["SKIN"];
+            //pointsGoal = int.Parse(eventProps["[GOALS]"]["POINTS"]);
+            //pointsScale = eventProps["[EVENT]"]["POINTS"].Split(',').Select(n => Convert.ToInt32(n)).ToArray();
+            //goldGoal = int.Parse(eventProps["[GOALS]"]["TIER1"]);
+            //silverGoal = int.Parse(eventProps["[GOALS]"]["TIER2"]);
+            //bronzeGoal = int.Parse(eventProps["[GOALS]"]["TIER3"]);
+            //opponents = new Opponents();
+
         }
-        name = eventProps["[EVENT]"]["NAME"];
-        description = eventProps["[EVENT]"]["DESCRIPTION"];
-        vehicle = eventProps["[RACE]"]["MODEL"];
-        track = eventProps["[RACE]"]["TRACK"];
-        try
+
+        internal void setTrack(string inputTrack)
         {
-            layout = eventProps["[RACE]"]["CONFIG_TRACK"];
+            track = inputTrack;
+            if (String.IsNullOrEmpty(imageSrc))
+            {
+                imageSrc = $"{Globals.acDir}\\content\\tracks\\{inputTrack}\\ui\\preview.png";
+            }
         }
-        catch (KeyNotFoundException)
+
+        /// <summary>
+        /// Creates a brand new Event Item
+        /// </summary>
+        /// <param name="i"></param>
+        public Event(int i)//, string playerVehicle)
         {
-            layout = "";
+            this.eventIndex = i;
+            this.name = "Untitled Event";
+            //this.vehicle = playerVehicle;
         }
-        carSkin = eventProps["[CAR_0]"]["SKIN"];
-        //pointsGoal = int.Parse(eventProps["[GOALS]"]["POINTS"]);
-        //pointsScale = eventProps["[EVENT]"]["POINTS"].Split(',').Select(n => Convert.ToInt32(n)).ToArray();
-        //goldGoal = int.Parse(eventProps["[GOALS]"]["TIER1"]);
-        //silverGoal = int.Parse(eventProps["[GOALS]"]["TIER2"]);
-        //bronzeGoal = int.Parse(eventProps["[GOALS]"]["TIER3"]);
-        //opponents = new Opponents();
 
-    }
-
-    public Event(int i)
-    {
-        this.eventIndex = i;
-    }
-
-    internal async void CreateEventFolder(string parentDirectory)
-    {
-        string championshipDirectory = String.Format("{0}\\event{1}", parentDirectory, eventIndex + 1);
-        Directory.CreateDirectory(championshipDirectory);
-        await File.WriteAllTextAsync(String.Format("{0}\\event.ini", championshipDirectory), CreateString());
-        if (imageSrc != null)
+        public void setPlayerVehicle(string playerVehicle)
         {
-            string ext = Path.GetExtension(imageSrc);
-            File.Copy(imageSrc, String.Format("{0}\\preview.{1}", championshipDirectory, ext));
+            this.vehicle = playerVehicle;
         }
-    }
+        internal async void CreateEventFolder(string parentDirectory)
+        {
+            string championshipDirectory = String.Format("{0}\\event{1}", parentDirectory, eventIndex + 1);
+            Directory.CreateDirectory(championshipDirectory);
+            await File.WriteAllTextAsync(String.Format("{0}\\event.ini", championshipDirectory), CreateString());
+            if (imageSrc != null)
+            {
+                string ext = Path.GetExtension(imageSrc);
+                if (File.Exists(imageSrc)) { 
+                    File.Copy(imageSrc, String.Format("{0}\\preview.{1}", championshipDirectory, ext));
+                }
+            }
+        }
 
-    //TODO: Move this to somewhere can be accessed by multiple classes
-    private Dictionary<string, string> PopulateDictionaryWithValues(string preFix, string[] fileContents)
-    {
-        string[] values = fileContents.Where(c => c.Contains("=")).ToArray();
-        Array.ForEach(values, x => x = x.EndsWith("=") ? x + " " : x);
-        Dictionary<string, string> seriesDetails = values
-                                       .Select(x => x.Split('='))
-                                       .ToDictionary(x => x[0], x => x[1]);
-        return seriesDetails;
-    }
+        //TODO: Move this to somewhere can be accessed by multiple classes
+        private Dictionary<string, string> PopulateDictionaryWithValues(string preFix, string[] fileContents)
+        {
+            string[] values = fileContents.Where(c => c.Contains("=")).ToArray();
+            Array.ForEach(values, x => x = x.EndsWith("=") ? x + " " : x);
+            Dictionary<string, string> seriesDetails = values
+                                           .Select(x => x.Split('='))
+                                           .ToDictionary(x => x[0], x => x[1]);
+            return seriesDetails;
+        }
 
-    private string CreateString()
-    {
-        return String.Format(eventTemplate, name, description, track, layout, vehicle, carSkin);
+        private string CreateString()
+        {
+            return String.Format(eventTemplate, name, description, track, layout, vehicle, carSkin);
+        }
     }
 }
