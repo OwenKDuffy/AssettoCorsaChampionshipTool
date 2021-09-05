@@ -3,26 +3,25 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-
 public class Championship
 {
-	int numberOfEvents = 1;
+    int numberOfEvents = 1;
     string code, name, description, playerVehicle, imageSrc;
     int[] pointsScale;
     int pointsGoal, goldGoal, silverGoal, bronzeGoal;
     Event[] events;
     Opponents opponents;
     public Championship()
-	{
+    {
 
-	}
+    }
     public Championship(string pathToDirectory)
     {
         numberOfEvents = Directory.GetDirectories(pathToDirectory).Length;
         events = new Event[numberOfEvents];
         for (int i = 0; i < events.Length; i++)
         {
-            events[i] = new Event(i);
+            events[i] = new Event(i, String.Format("{0}\\event{1}", pathToDirectory, i + 1));
         }
         string[] fileContents = File.ReadAllLines(pathToDirectory + "\\series.ini");
         string[] sectionHeaders = fileContents.Where(c => (new[] { "[", "]" }).Any(c.Contains)).ToArray();
@@ -45,7 +44,7 @@ public class Championship
         silverGoal = int.Parse(champProps["[GOALS]"]["TIER2"]);
         bronzeGoal = int.Parse(champProps["[GOALS]"]["TIER3"]);
         opponents = new Opponents();
-   	}
+    }
     private Dictionary<string, string> PopulateDictionaryWithValues(string preFix, string[] fileContents)
     {
         string[] values = fileContents.Where(c => c.Contains("=")).ToArray();
@@ -68,7 +67,7 @@ public class Championship
         if (imageSrc != null)
         {
             string ext = Path.GetExtension(imageSrc);
-            File.Copy(imageSrc,  String.Format("{0}\\preview.{1}", championshipDirectory, ext));
+            File.Copy(imageSrc, String.Format("{0}\\preview.{1}", championshipDirectory, ext));
         }
         opponents.ExportToFile(championshipDirectory);
         Console.WriteLine("Exported");
@@ -93,11 +92,12 @@ TIER3 = {8}
 RANKING = 0", code, name, description, pointsScale, playerVehicle, pointsGoal, goldGoal, silverGoal, bronzeGoal);
     }
     public void PrettyPrintChampionshipDetails()
-	{
+    {
         Console.WriteLine("Name: {0}\nDescription: {1}\nVehicle: {2}\nNumber of Events: {3}\nAchieve {4} Points", name, description, playerVehicle, numberOfEvents, pointsGoal);
-        for(int i = 0; i< pointsScale.Length; i++)
+        for (int i = 0; i < pointsScale.Length; i++)
         {
             Console.WriteLine("P{0}: {1} points", i + 1, pointsScale[i]);
         }
     }
 }
+
