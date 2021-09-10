@@ -9,7 +9,7 @@ namespace AssettoCorsaChampionshipEditor
     {
         int numberOfEvents = 1;
         string code, name, description, imageSrc;
-        public string playerVehicle;
+        public string playerVehicle, carSkin;
         int[] pointsScale;
         int pointsGoal, goldGoal, silverGoal, bronzeGoal;
         List<Event> events;
@@ -18,9 +18,10 @@ namespace AssettoCorsaChampionshipEditor
         {
             name = "Untitled Championship";
             playerVehicle = "";
+            carSkin = "";
             events = new List<Event>();
             events.Add(new Event(0));
-            events[0].setPlayerVehicle(playerVehicle);
+            events[0].setPlayerVehicle(playerVehicle, "");
             pointsScale = new int[6] { 10, 6, 4, 3, 2, 1 };
             pointsGoal = 50;
             opponents = new Opponents();
@@ -29,11 +30,12 @@ namespace AssettoCorsaChampionshipEditor
         internal void addEvent()
         {
             events.Add(new Event(events.Count));
-            events[events.Count - 1].setPlayerVehicle(playerVehicle);
+            events[events.Count - 1].setPlayerVehicle(playerVehicle, carSkin);
         }
 
         public Championship(string pathToDirectory)
         {
+            events = new List<Event>();
             numberOfEvents = Directory.GetDirectories(pathToDirectory).Length;
             for (int i = 0; i < numberOfEvents; i++)
             {
@@ -41,52 +43,106 @@ namespace AssettoCorsaChampionshipEditor
             }
             string[] fileContents = File.ReadAllLines(pathToDirectory + "\\series.ini");
             string[] sectionHeaders = fileContents.Where(c => (new[] { "[", "]" }).Any(c.Contains)).ToArray();
-            Dictionary<string, Dictionary<string, string>> champProps = new Dictionary<string, Dictionary<string, string>>();
-            for (int i = 0; i < sectionHeaders.Length; i++)
+            foreach (var item in sectionHeaders.Select((value, i) => (value, i)))
             {
-                string sectionHeader = sectionHeaders[i];
+                string sectionHeader = item.value;
                 int thisSection = Array.IndexOf(fileContents, sectionHeader);
-                int lengthToTake = (i + 1 < sectionHeaders.Length ? Array.IndexOf(fileContents, sectionHeaders[i + 1]) : fileContents.Length) - thisSection;
-                champProps.Add(sectionHeader, PopulateDictionaryWithValues(sectionHeader, fileContents.Skip(thisSection).Take(lengthToTake).ToArray()));
+                int lengthToTake = (item.i + 1 < sectionHeaders.Length ? Array.IndexOf(fileContents, sectionHeaders[item.i + 1]) : fileContents.Length) - thisSection;
+                foreach (string line in fileContents.Skip(thisSection).Take(lengthToTake).ToArray())
+                {
+                    string x = line.EndsWith("=") ? line + " " : line;
+                    string[] z = x.Split('=');
+                    if (sectionHeader.Equals("[SERIES]"))
+                    {
+                        switch (z[0])
+                        {
+                            case "CODE":
+                                code = z[1];
+                                break;
+                            case "NAME":
+                                name = z[1] + " Copy";
+                                break;
+                            case "DESCRIPTION":
+                                description = z[1];
+                                break;
+                            case "MODEL":
+                                playerVehicle = z[1];
+                                break;
+                            case "POINTS":
+                                pointsScale = z[1].Split(',').Select(n => Convert.ToInt32(n)).ToArray();
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else if (sectionHeader.Equals("[GOALS]"))
+                    {
+                        int res;
+                        switch (z[0])
+                        {
+                            case "POINTS":
+                                pointsGoal = int.Parse(z[1]);
+                                break;
+                            case "TIER1":
+                                if (int.TryParse(z[1], out res))
+                                {
+                                    goldGoal = res;
+                                }
+                                break;
+                            case "TIER2":
+                                if (int.TryParse(z[1], out res))
+                                {
+                                    silverGoal = res;
+                                }
+                                break;
+                            case "TIER3":
+                                if (int.TryParse(z[1], out res))
+                                {
+                                    bronzeGoal = res;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
             }
+            opponents = new Opponents(pathToDirectory);
+            if (File.Exists($"{pathToDirectory}\\preview.png"))
+            {
+                imageSrc = $"{pathToDirectory}\\preview.png";
+            }
+        }
 
-            code = champProps["[SERIES]"]["CODE"];
-            name = champProps["[SERIES]"]["NAME"];
-            description = champProps["[SERIES]"]["DESCRIPTION"];
-            playerVehicle = champProps["[SERIES]"]["MODEL"];
-            pointsGoal = int.Parse(champProps["[GOALS]"]["POINTS"]);
-            pointsScale = champProps["[SERIES]"]["POINTS"].Split(',').Select(n => Convert.ToInt32(n)).ToArray();
-            goldGoal = int.Parse(champProps["[GOALS]"]["TIER1"]);
-            silverGoal = int.Parse(champProps["[GOALS]"]["TIER2"]);
-            bronzeGoal = int.Parse(champProps["[GOALS]"]["TIER3"]);
-            opponents = new Opponents();
+        internal void SetAllCars(string carToSet)
+        {
+            string[] skins = Globals.GetSkinsForCar(carToSet);
+            SetPlayerCar(carToSet, skins[0]);
+            foreach (Event e in events)
+            {
+                e.setPlayerVehicle(carToSet, skins[0]);
+            }
+            opponents.SetAllCars(carToSet, skins);
         }
 
         public Event getEvent(int index)
         {
             return events[index];
         }
-        public void SetPlayerCar(string carName)
+        public void SetPlayerCar(string carName, string skin)
         {
             playerVehicle = carName;
+            carSkin = skin;
             foreach (Event e in events)
             {
-                e.setPlayerVehicle(carName);
+                e.setPlayerVehicle(carName, skin);
             }
         }
-        private Dictionary<string, string> PopulateDictionaryWithValues(string preFix, string[] fileContents)
-        {
-            string[] values = fileContents.Where(c => c.Contains("=")).ToArray();
-            Array.ForEach(values, x => x = x.EndsWith("=") ? x + " " : x);
-            Dictionary<string, string> seriesDetails = values
-                                           .Select(x => x.Split('='))
-                                           .ToDictionary(x => x[0], x => x[1]);
-            return seriesDetails;
-        }
+
 
         public async void ExportChampionshipToFile(string acFolder)
         {
-            string championshipDirectory = String.Format("{0}\\content\\career\\series_{1}", acFolder, "testingName");// name.Replace(" ", "_"));
+            string championshipDirectory = String.Format("{0}\\content\\career\\series_{1}", acFolder, name.ToLower().Replace(" ", "_"));
             Directory.CreateDirectory(championshipDirectory);
             await File.WriteAllTextAsync(String.Format("{0}\\series.ini", championshipDirectory), CreateString());
             foreach (Event e in events)
@@ -118,7 +174,7 @@ POINTS = {5}
 TIER1 = {6}
 TIER2 = {7}
 TIER3 = {8}
-RANKING = 0", code, name, description, string.Join(", ", pointsScale), playerVehicle, pointsGoal, goldGoal, silverGoal, bronzeGoal);
+RANKING = 0", code, name, description, string.Join(",", pointsScale), playerVehicle, pointsGoal, goldGoal, silverGoal, bronzeGoal);
         }
         public void PrettyPrintChampionshipDetails()
         {

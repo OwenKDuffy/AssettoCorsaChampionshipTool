@@ -43,34 +43,58 @@ NATIONALITY = ";
             eventIndex = eventNumber;
             string[] fileContents = File.ReadAllLines(pathToDirectory + "\\event.ini");
             string[] sectionHeaders = fileContents.Where(c => (new[] { "[", "]" }).Any(c.Contains)).ToArray();
-            Dictionary<string, Dictionary<string, string>> eventProps = new Dictionary<string, Dictionary<string, string>>();
-            for (int i = 0; i < sectionHeaders.Length; i++)
+            foreach (var item in sectionHeaders.Select((value, i) => (value, i)))
             {
-                string sectionHeader = sectionHeaders[i];
+                string sectionHeader = new string(item.value.Where(c => !Char.IsWhiteSpace(c)).ToArray()); 
                 int thisSection = Array.IndexOf(fileContents, sectionHeader);
-                int lengthToTake = (i + 1 < sectionHeaders.Length ? Array.IndexOf(fileContents, sectionHeaders[i + 1]) : fileContents.Length) - thisSection;
-                eventProps.Add(sectionHeader, PopulateDictionaryWithValues(sectionHeader, fileContents.Skip(thisSection).Take(lengthToTake).ToArray()));
+                int lengthToTake = (item.i + 1 < sectionHeaders.Length ? Array.IndexOf(fileContents, sectionHeaders[item.i + 1]) : fileContents.Length) - thisSection;
+                foreach (string line in fileContents.Skip(thisSection).Take(lengthToTake).ToArray())
+                {
+                    string x = line.EndsWith("=") ? line + " " : line;
+                    string[] z = x.Split('=');
+                    if (sectionHeader.Equals("[EVENT]"))
+                    {
+                        switch (z[0])
+                        {
+                            case "NAME":
+                                name = z[1];
+                                break;
+                            case "DESCRIPTION":
+                                description = z[1];
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    else if (sectionHeader.Equals("[RACE]"))
+                    {
+                        switch (z[0])
+                        {
+                            case "MODEL":
+                                vehicle = z[1];
+                                break;
+                            case "TRACK":
+                                track = z[1];
+                                break;
+                            case "CONFIG_TRACK":
+                                layout = z[1];
+                                break;
+                            //case "TIER2":
+                            //    silverGoal = int.Parse(z[1]);
+                            //    break;
+                            //case "TIER3":
+                            //    bronzeGoal = int.Parse(z[1]);
+                            //    break;
+                            default:
+                                break;
+                        }
+                    }
+                }
             }
-            name = eventProps["[EVENT]"]["NAME"];
-            description = eventProps["[EVENT]"]["DESCRIPTION"];
-            vehicle = eventProps["[RACE]"]["MODEL"];
-            track = eventProps["[RACE]"]["TRACK"];
-            try
+            if (File.Exists($"{pathToDirectory}\\preview.png"))
             {
-                layout = eventProps["[RACE]"]["CONFIG_TRACK"];
+                imageSrc = $"{pathToDirectory}\\preview.png";
             }
-            catch (KeyNotFoundException)
-            {
-                layout = "";
-            }
-            carSkin = eventProps["[CAR_0]"]["SKIN"];
-            //pointsGoal = int.Parse(eventProps["[GOALS]"]["POINTS"]);
-            //pointsScale = eventProps["[EVENT]"]["POINTS"].Split(',').Select(n => Convert.ToInt32(n)).ToArray();
-            //goldGoal = int.Parse(eventProps["[GOALS]"]["TIER1"]);
-            //silverGoal = int.Parse(eventProps["[GOALS]"]["TIER2"]);
-            //bronzeGoal = int.Parse(eventProps["[GOALS]"]["TIER3"]);
-            //opponents = new Opponents();
-
         }
 
         internal void setTrack(string inputTrack)
@@ -93,9 +117,10 @@ NATIONALITY = ";
             //this.vehicle = playerVehicle;
         }
 
-        public void setPlayerVehicle(string playerVehicle)
+        public void setPlayerVehicle(string playerVehicle, string skin)
         {
             this.vehicle = playerVehicle;
+            this.carSkin = skin;
         }
         internal async void CreateEventFolder(string parentDirectory)
         {
@@ -105,21 +130,11 @@ NATIONALITY = ";
             if (imageSrc != null)
             {
                 string ext = Path.GetExtension(imageSrc);
-                if (File.Exists(imageSrc)) { 
-                    File.Copy(imageSrc, String.Format("{0}\\preview.{1}", championshipDirectory, ext));
+                if (File.Exists(imageSrc))
+                {
+                    File.Copy(imageSrc, String.Format("{0}\\preview{1}", championshipDirectory, ext));
                 }
             }
-        }
-
-        //TODO: Move this to somewhere can be accessed by multiple classes
-        private Dictionary<string, string> PopulateDictionaryWithValues(string preFix, string[] fileContents)
-        {
-            string[] values = fileContents.Where(c => c.Contains("=")).ToArray();
-            Array.ForEach(values, x => x = x.EndsWith("=") ? x + " " : x);
-            Dictionary<string, string> seriesDetails = values
-                                           .Select(x => x.Split('='))
-                                           .ToDictionary(x => x[0], x => x[1]);
-            return seriesDetails;
         }
 
         private string CreateString()
