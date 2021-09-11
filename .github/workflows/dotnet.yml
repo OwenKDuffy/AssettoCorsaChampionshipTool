@@ -22,4 +22,15 @@ jobs:
     - name: Build
       run: dotnet build ./AssettoCorsaChampionshipEditor/AssettoCorsaChampionshipEditor.sln --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test ./AssettoCorsaChampionshipEditor/AssettoCorsaChampionshipEditor.sln --no-build --verbosity normal
+      
+      
+on: push
+
+jobs:
+  tests:
+    name: Unit Testing
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2.1.0
+      - run: dotnet test
