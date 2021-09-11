@@ -24,10 +24,6 @@ jobs:
     - name: Test
       run: dotnet test ./AssettoCorsaChampionshipEditor/AssettoCorsaChampionshipEditor.sln --no-build --verbosity normal
       
-      
-on: push
-
-jobs:
   tests:
     name: Unit Testing
     runs-on: windows-latest
