@@ -30,8 +30,10 @@ MODEL = {4}
 SKIN = {5}
 DRIVER_NAME =
 NATIONALITY = ";
-        private int eventIndex;
-        private string name, description, weather, track, layout, vehicle, trackSkin, carSkin, imageSrc;
+        public int eventIndex;
+        public string name, vehicle;
+        private string description, weather, track, layout, 
+            trackSkin, carSkin, imageSrc;
 
         /// <summary>
         /// Creates an Event object based on a specified input file

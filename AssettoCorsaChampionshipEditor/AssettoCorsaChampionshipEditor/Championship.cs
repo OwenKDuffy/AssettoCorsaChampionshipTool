@@ -7,13 +7,13 @@ namespace AssettoCorsaChampionshipEditor
 {
     public class Championship
     {
-        int numberOfEvents = 1;
-        string code, name, description, imageSrc;
+        public int numberOfEvents = 1;
+        public string code, name, description, imageSrc;
         public string playerVehicle, carSkin;
-        int[] pointsScale;
-        int pointsGoal, goldGoal, silverGoal, bronzeGoal;
-        List<Event> events;
-        Opponents opponents;
+        public int[] pointsScale;
+        public int pointsGoal, goldGoal, silverGoal, bronzeGoal;
+        public List<Event> events;
+        public Opponents opponents;
         public Championship()
         {
             name = "Untitled Championship";
@@ -178,10 +178,11 @@ RANKING = 0", code, name, description, string.Join(",", pointsScale), playerVehi
         }
         public void PrettyPrintChampionshipDetails()
         {
-            Console.WriteLine("Name: {0}\nDescription: {1}\nVehicle: {2}\nNumber of Events: {3}\nAchieve {4} Points", name, description, playerVehicle, numberOfEvents, pointsGoal);
+            //\nDescription: {description}\nVehicle: {playerVehicle}
+            Console.Write($"Name: {name}\nNumber of Events: {numberOfEvents}\nAchieve {pointsGoal} Points\n");
             for (int i = 0; i < pointsScale.Length; i++)
             {
-                Console.WriteLine("P{0}: {1} points", i + 1, pointsScale[i]);
+                Console.Write("P{0}: {1} points\n", i + 1, pointsScale[i]);
             }
         }
     }

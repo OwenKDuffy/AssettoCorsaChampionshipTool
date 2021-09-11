@@ -7,7 +7,7 @@ namespace AssettoCorsaChampionshipEditor
 {
 
     // static class to hold global variables, etc.
-    static class Globals
+    public static class Globals
     {
         // global int
         public static string acDir = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\assettocorsa";
@@ -22,7 +22,12 @@ namespace AssettoCorsaChampionshipEditor
             return seriesDetails;
         }
 
-        private static string listAndNumber(string[] list)
+        /// <summary>
+        /// Creates a numbered list in string form from a given list
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public static string ListAndNumber(string[] list)
         {
             var sb = new System.Text.StringBuilder();
             foreach (var item in list.Select((value, i) => (value, i)))
@@ -32,13 +37,13 @@ namespace AssettoCorsaChampionshipEditor
             return sb.ToString();
         }
 
-        public static void prettyPrintList(string[] list, int numPerLine = 3)
-        {
-            for (int i = 0; i < list.Length - numPerLine; i += numPerLine)
-            {
-                Console.WriteLine($"{list[i],20}\t{list[i + 1],20}\t{list[i + 2],20}");
-            }
-        }
+        //public static void prettyPrintList(string[] list, int numPerLine = 3)
+        //{
+        //    for (int i = 0; i < list.Length - numPerLine; i += numPerLine)
+        //    {
+        //        Console.WriteLine($"{list[i],20}\t{list[i + 1],20}\t{list[i + 2],20}");
+        //    }
+        //}
         public static string[] GetListOfCars()
         {
             return Directory.GetDirectories(acDir + "\\content\\cars").Select(Path.GetFileName).ToArray();
@@ -79,9 +84,9 @@ namespace AssettoCorsaChampionshipEditor
 
             Championship c = new Championship(Globals.acDir + "\\content\\career\\series_f1_2020_championship");
             //////c.getEvent(0)
-            c.SetAllCars(cars[221]);
+            //c.SetAllCars(cars[221]);
             c.PrettyPrintChampionshipDetails();
-            c.ExportChampionshipToFile(Globals.acDir);
+            //c.ExportChampionshipToFile(Globals.acDir);
             //Console.WriteLine("Exporting");
             //Console.WriteLine("\nCars:\n");
             //Array.ForEach(cars, Console.WriteLine);
